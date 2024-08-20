@@ -1,0 +1,6 @@
+requests
+beautifulsoup4
+facebook-sdk
+pandas
+sqlalchemy
+PyPDF2
