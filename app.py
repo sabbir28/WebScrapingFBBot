@@ -306,9 +306,9 @@ if __name__ == "__main__":
     json_path = 'notice/notices.json'
     db_file = 'notice/data.db'
     
-    manager = ExamNoticeManager(fetch_url, json_path, db_file)
-    manager.fetch_exam_notices()
-    manager.convert_and_save()
+    #manager = ExamNoticeManager(fetch_url, json_path, db_file)
+    #manager.fetch_exam_notices()
+    #manager.convert_and_save()
     
     #complite initlize now time for upload that on facebook
     
