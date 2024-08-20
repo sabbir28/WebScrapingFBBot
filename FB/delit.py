@@ -39,8 +39,8 @@ class FacebookPostDeleter:
 
 # Example usage
 if __name__ == "__main__":
-    ACCESS_TOKEN = 'EAAK0hVTomMEBO0URPZBnmNOZCYZAK6vfBZBZC0M4eoHuHCA8geO452Jsm7C3muhfGL08LOByiqdEIjSbJKuOUMZA1L7gzfrtkWzu7lpXw8aXqZAWvZAXYu3dPPxfGJzmaYmgZBnYyzwE0gXdG6kS1QLY70wcvlvuBAEKieWF3HN8x3zQcbG676stU6unZC2cI4Lrm7QKIPCWqEoqmIhVNGczSka9vr'
-    PAGE_ID = '394881123708990'  # Your page ID
+    ACCESS_TOKEN = ''
+    PAGE_ID = ''  # Your page ID
 
     deleter = FacebookPostDeleter(ACCESS_TOKEN, PAGE_ID)
     deleter.delete_all_posts()
