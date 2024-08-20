@@ -4,3 +4,5 @@ facebook-sdk
 pandas
 sqlalchemy
 PyPDF2
+click
+PyMuPDF
