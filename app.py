@@ -6,13 +6,77 @@ from Core import ExamNotice
 from JSONToDBConverter import JSONToDBConverter
 import requests
 from bs4 import BeautifulSoup
-import time
-from datetime import datetime
 from PDF.PDFProcessor import PDFProcessor
 from PDF.PDFConverter import PDFConverter
 from FB.FacebookPoster import FacebookPoster
-from config import PAGE_ACCESS_TOKEN,PAGE_ID
+from config import PAGE_ACCESS_TOKEN, PAGE_ID
 
+# Telegram Part-------------------------------------
+# Replace with your bot token
+TELEGRAM_BOT_TOKEN = '7322504605:AAEQdvsdQMfhpN1JJW5CeoyvvuL-HFXi5OA'
+
+# Initialize the file to store chat IDs
+CHAT_IDS_FILE = 'chat_ids.json'
+
+def load_chat_ids():
+    """Load chat IDs from a file."""
+    if os.path.exists(CHAT_IDS_FILE):
+        with open(CHAT_IDS_FILE, 'r') as file:
+            return json.load(file)
+    return []
+
+def send_telegram_message(token, chat_id, message):
+    """Send a text message to a specific chat ID."""
+    url = f'https://api.telegram.org/bot{token}/sendMessage'
+    payload = {
+        'chat_id': chat_id,
+        'text': message,
+        'parse_mode': 'HTML'  # Optional: Use HTML parsing for formatting
+    }
+    response = requests.post(url, data=payload)
+    
+    if response.status_code == 200:
+        result = response.json()
+        if result.get('ok'):
+            print(f"Message sent to chat ID {chat_id} successfully!")
+        else:
+            print(f"Failed to send message to chat ID {chat_id}. Description: {result.get('description')}")
+    else:
+        print(f"HTTP Error: {response.status_code}")
+        print(f"Response: {response.text}")
+
+def send_telegram_photo(token, chat_id, photo_path, caption=None):
+    """Send a photo to a specific chat ID."""
+    url = f'https://api.telegram.org/bot{token}/sendPhoto'
+    with open(photo_path, 'rb') as photo_file:
+        payload = {
+            'chat_id': chat_id,
+            'caption': caption
+        }
+        files = {
+            'photo': photo_file
+        }
+        response = requests.post(url, data=payload, files=files)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('ok'):
+                print(f"Photo sent to chat ID {chat_id} successfully!")
+            else:
+                print(f"Failed to send photo to chat ID {chat_id}. Description: {result.get('description')}")
+        else:
+            print(f"HTTP Error: {response.status_code}")
+            print(f"Response: {response.text}")
+
+def send_message_to_all_chats(token, message, photo_path=None, caption=None):
+    """Send a message or photo to all stored chat IDs."""
+    chat_ids = load_chat_ids()
+    for chat_id in chat_ids:
+        if photo_path:
+            send_telegram_photo(token, chat_id, photo_path, caption)
+        else:
+            send_telegram_message(token, chat_id, message)
+#---------------------------------------------------
 
 def load_json_data(file_path):
     """
@@ -166,10 +230,11 @@ class Facebook:
         self.connection = sqlite3.connect(self.db_path)
         self.cursor = self.connection.cursor()
         
-        # ading tracking manejer for my project
+        # Adding tracking manager for the project
         self.db_manager = TraceManager('example.db')
         
         self.fb_poster = FacebookPoster(PAGE_ID, PAGE_ACCESS_TOKEN)
+        self.telegram_chat_ids = load_chat_ids()  # Load Telegram chat IDs
 
     def get_last_id(self):
         """
@@ -187,7 +252,7 @@ class Facebook:
 
         :return: A list of tuples representing the notifications
         """
-        self.cursor.execute("SELECT * FROM notifications")
+        self.cursor.execute("SELECT * FROM notifications ORDER BY id DESC")
         return self.cursor.fetchall()
 
     def print_notifications(self):
@@ -198,14 +263,12 @@ class Facebook:
         for notification in notifications:
             id, title, last_updated, download_link = notification
             
-            # there is a way or process for uplaod those file onw by one
-            
             if self.db_manager.record_exists(url=download_link):
-                pass # alrady exist that entry or poted
+                pass  # Already exists that entry or posted
             else:
-                # adding that deta into traking system
+                # Adding that data into tracking system
                 self.db_manager.add_record(download_link) 
-                processor = PDFProcessor(pdf_url=download_link,destination_folder="dump")
+                processor = PDFProcessor(pdf_url=download_link, destination_folder="dump")
                 processor.process()
             
                 # Construct the path to the JSON file
@@ -220,8 +283,8 @@ class Facebook:
                 converter.convert_pdf_to_images()
                 
                 print(converter.get_image_paths())
-                #self.fb_poster.post_image_with_text(image_path=converter.get_image_paths()[0],message=title)
-            
+
+                # Construct notification details
                 formatted_details = format_notification_details(id, title, last_updated, download_link)
                 
                 # Check if there's more than one image
@@ -233,8 +296,16 @@ class Facebook:
                     else:
                         message = formatted_details
                     
+                    # Post to Facebook
                     self.fb_poster.post_image_with_text(image_path=image_path, message=message)
-            
+                    
+                    # Post to Telegram
+                    for chat_id in self.telegram_chat_ids:
+                        if image_path:
+                            send_telegram_photo(TELEGRAM_BOT_TOKEN, chat_id, image_path, message)
+                        else:
+                            send_telegram_message(TELEGRAM_BOT_TOKEN, chat_id, message)
+                
                 print(f"ID: {id}")
                 print(f"Title: {title}")
                 print(f"Last Updated: {last_updated}")
@@ -306,12 +377,11 @@ if __name__ == "__main__":
     json_path = 'notice/notices.json'
     db_file = 'notice/data.db'
     
-    #manager = ExamNoticeManager(fetch_url, json_path, db_file)
-    #manager.fetch_exam_notices()
-    #manager.convert_and_save()
+    manager = ExamNoticeManager(fetch_url, json_path, db_file)
+    manager.fetch_exam_notices()
+    manager.convert_and_save()
     
-    #complite initlize now time for upload that on facebook
-    
+    # Initialize and run the Facebook and Telegram notification process
     fb = Facebook(db_file)
     print(f"Last ID: {fb.get_last_id()}")
     fb.print_notifications()
