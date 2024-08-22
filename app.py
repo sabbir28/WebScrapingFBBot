@@ -187,7 +187,7 @@ class Facebook:
 
         :return: A list of tuples representing the notifications
         """
-        self.cursor.execute("SELECT * FROM notifications ORDER BY id DESC")
+        self.cursor.execute("SELECT * FROM notifications")
         return self.cursor.fetchall()
 
     def print_notifications(self):
