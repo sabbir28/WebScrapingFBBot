@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "alor28",
+  "apiKey": "AIzaSyD-Flbdxd20544kFBHTiV0zkc3cNh75bcU",
+  "authDomain": "alor28.firebaseapp.com",
+  "databaseURL": "https://alor28-default-rtdb.asia-southeast1.firebasedatabase.app",
+  "projectId": "alor28",
+  "storageBucket": "alor28.appspot.com",
+  "messagingSenderId": "781215046566",
+  "appId": "1:781215046566:web:c01d600769c6ea190e0d67",
+  "measurementId": "G-JGWZDKS4MW"
+}
